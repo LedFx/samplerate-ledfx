@@ -47,7 +47,7 @@ dev = [
     "setuptools>=80",
     # Lint tools, run by prek (.pre-commit-config.yaml) from this lock.
     "prek>=0.5.3",
-    "ruff==0.16.9",
+    "ruff==0.16.10",
     "actionlint-py==1.7.12.25",
     "shellcheck-py==0.11.0.1",
 ]
