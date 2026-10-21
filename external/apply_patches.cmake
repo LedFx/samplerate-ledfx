@@ -5,6 +5,10 @@
 file(GLOB patches "${PATCH_DIR}/*.patch")
 list(SORT patches)
 find_package(Git REQUIRED QUIET)
+# The sdist's sources have no .git: stop git finding an enclosing repository
+# (or a stray .git file), which would make it skip or refuse the patch.
+get_filename_component(parent "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
+set(ENV{GIT_CEILING_DIRECTORIES} "${parent}")
 foreach(patch IN LISTS patches)
   execute_process(
     COMMAND "${GIT_EXECUTABLE}" apply --reverse --check "${patch}"

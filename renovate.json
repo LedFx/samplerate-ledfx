@@ -7,18 +7,6 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Vendored C/C++ deps pinned by commit in external/CMakeLists.txt. The match runs on to the matching set(*_VERSION ...) line so both copies of the version are bumped together.",
-      "managerFilePatterns": [
-        "/^external/CMakeLists\\.txt$/"
-      ],
-      "matchStrings": [
-        "GIT_REPOSITORY https://github\\.com/(?<depName>[\\w.-]+/[\\w.-]+)\\s+GIT_TAG (?<currentDigest>[0-9a-f]{40}) # (?<currentValue>v?\\d\\S*)[\\s\\S]*?set\\(\\w+_VERSION\\w* \"?\\S+?\"? CACHE"
-      ],
-      "datasourceTemplate": "github-tags",
-      "extractVersionTemplate": "^v?(?<version>.+)$"
-    },
-    {
-      "customType": "regex",
       "description": "libsamplerate tracks master by commit (external/CMakeLists.txt): its last release, 0.2.2, is from 2021.",
       "managerFilePatterns": [
         "/^external/CMakeLists\\.txt$/"
@@ -48,6 +36,13 @@
       "description": "C/C++ deps change the compiled wheel, and upstream bumps need porting; a person reads these.",
       "matchManagers": [
         "custom.regex"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "pybind11 (a build requirement in pyproject.toml) is compiled into the wheel; a person reads these.",
+      "matchPackageNames": [
+        "pybind11"
       ],
       "automerge": false
     },

@@ -31,8 +31,10 @@ The module is imported as `samplerate`, the same name as upstream's
 [`samplerate`](https://pypi.org/project/samplerate/) package, so install one or
 the other: `pip uninstall samplerate` first if you are switching.
 
-Building from source (where no wheel fits) needs a C++14 compiler and network
-access: CMake fetches libsamplerate and pybind11 at build time.
+Building from source (where no wheel fits) needs a C++14 compiler and git.
+The sdist includes libsamplerate's sources and pip installs pybind11 and CMake
+as build requirements, so the build needs no other network access. A git
+checkout clones libsamplerate at build time.
 
 ## Usage
 

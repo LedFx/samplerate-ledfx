@@ -1,19 +1,4 @@
 include(FetchContent)
-# Set pybind11 Python finding policy to use new FindPython
-set(PYBIND11_FINDPYTHON ON CACHE BOOL "Use FindPython instead of FindPythonInterp")
-
-# pybind11
-FetchContent_Declare(
-  pybind11
-  GIT_REPOSITORY https://github.com/pybind/pybind11
-  GIT_TAG 97bf890db679505a14dfe547a5e77bb2bd05dc90 # 3.1.0
-)
-## Change this if you update pybind11 version
-set(PYBIND11_VERSION_INFO "3.1.0" CACHE STRING "pybind11 version")  # <-- update pybind11 version here
-
-
-FetchContent_MakeAvailable(pybind11)
-
 
 # libsamplerate
 set(BUILD_TESTING OFF CACHE BOOL "Disable libsamplerate test build")
@@ -24,10 +9,18 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # a minimum version CMake 4 accepts. Renovate bumps the commit; move back to a
 # tag once a release includes these.
 set(LIBSAMPLERATE_COMMIT 0844c208f683527c08ea8a80acc13b398aa9c8bf) # master
+# The sdist ships this commit's sources (setup.py), so building it needs no
+# network (piwheels builds offline). A git checkout clones them.
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libsamplerate/CMakeLists.txt)
+  set(_libsamplerate_source URL ${CMAKE_CURRENT_SOURCE_DIR}/libsamplerate)
+else()
+  set(_libsamplerate_source
+      GIT_REPOSITORY https://github.com/libsndfile/libsamplerate
+      GIT_TAG ${LIBSAMPLERATE_COMMIT})
+endif()
 FetchContent_Declare(
   libsamplerate
-  GIT_REPOSITORY https://github.com/libsndfile/libsamplerate
-  GIT_TAG ${LIBSAMPLERATE_COMMIT}
+  ${_libsamplerate_source}
   # Fixes from upstream PRs that are not merged yet; see each patch's header.
   PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_DIR=${CMAKE_CURRENT_SOURCE_DIR}/patches
                 -P ${CMAKE_CURRENT_SOURCE_DIR}/apply_patches.cmake

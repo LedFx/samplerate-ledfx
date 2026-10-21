@@ -3,15 +3,21 @@
 # Script based on the cmake_example of pybind11 by Dean Moldovan
 # https://github.com/pybind/cmake_example
 
+import io
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
+import urllib.request
 from pathlib import Path
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+from setuptools.command.sdist import sdist
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -49,8 +55,11 @@ class CMakeBuild(build_ext):
 
         # EXAMPLE_VERSION_INFO shows you how to pass a value into the C++ code
         # from Python.
+        import pybind11  # a build requirement (pyproject.toml)
+
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
+            f"-Dpybind11_DIR={pybind11.get_cmake_dir()}",
             f"-DPython_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
         ]
@@ -145,7 +154,32 @@ class CMakeBuild(build_ext):
         )
 
 
+class SdistWithLibsamplerate(sdist):
+    """Ship the pinned libsamplerate sources in the sdist.
+
+    external/CMakeLists.txt builds from them when present, so building the
+    sdist needs no network beyond the package index (piwheels builders
+    cannot reach GitHub).
+    """
+
+    def make_release_tree(self, base_dir, files):
+        super().make_release_tree(base_dir, files)
+        dest = Path(base_dir, "external", "libsamplerate")
+        if dest.exists():  # an sdist of an sdist: MANIFEST.in already copied it
+            return
+        cmake = Path(__file__).parent / "external" / "CMakeLists.txt"
+        commit = re.search(
+            r"set\(LIBSAMPLERATE_COMMIT ([0-9a-f]{40})\)", cmake.read_text()
+        )[1]
+        url = f"https://github.com/libsndfile/libsamplerate/archive/{commit}.tar.gz"
+        with urllib.request.urlopen(url, timeout=120) as response:
+            archive = io.BytesIO(response.read())
+        with tempfile.TemporaryDirectory() as tmp, tarfile.open(fileobj=archive) as tar:
+            tar.extractall(tmp, filter="data")
+            shutil.move(Path(tmp, f"libsamplerate-{commit}"), dest)
+
+
 setup(
-    cmdclass={"build_ext": CMakeBuild},
+    cmdclass={"build_ext": CMakeBuild, "sdist": SdistWithLibsamplerate},
     ext_modules=[CMakeExtension("samplerate")],
 )

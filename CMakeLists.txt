@@ -7,6 +7,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 cmake_policy(SET CMP0148 NEW)
 
+# pybind11 comes from the pybind11 build requirement in pyproject.toml;
+# setup.py points pybind11_DIR at it.
+set(PYBIND11_FINDPYTHON ON CACHE BOOL "Use FindPython instead of FindPythonInterp")
+find_package(pybind11 CONFIG REQUIRED)
+
 # adds the external dependencies
 add_subdirectory(external)
 
@@ -46,7 +51,7 @@ target_compile_definitions(python-samplerate
     PRIVATE CMAKE_VERSION="${CMAKE_VERSION}"
     PRIVATE TARGET_ARCH="${CMAKE_SYSTEM_PROCESSOR}"
     PRIVATE TARGET_OS="${CMAKE_SYSTEM_NAME}"
-    PUBLIC PYBIND11_VERSION_INFO="${PYBIND11_VERSION_INFO}"
+    PUBLIC PYBIND11_VERSION_INFO="${pybind11_VERSION}"
     PRIVATE LTO_ENABLED=$<BOOL:$<TARGET_PROPERTY:python-samplerate,INTERPROCEDURAL_OPTIMIZATION>>
 )
 

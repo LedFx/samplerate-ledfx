@@ -207,6 +207,19 @@ jobs:
           tar -xzf dist/*.tar.gz -C sdist --strip-components=1
           uv run --no-project pytest sdist/tests -m "not perf"
 
+      # piwheels builds the Raspberry Pi OS wheels from the sdist with no
+      # network beyond the package index. Build it here with none at all,
+      # from preinstalled build requirements, so nothing fetches at build time.
+      - name: Build and test the sdist with networking disabled
+        run: |
+          python3 -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['build-system']['requires']))" > build-requires.txt
+          uv venv offline
+          uv pip install -p offline -r build-requires.txt numpy --group test
+          # Ubuntu's AppArmor blocks unprivileged user namespaces by default.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          unshare -rn uv pip install -p offline --offline --no-cache --no-build-isolation --no-deps dist/*.tar.gz
+          offline/bin/python -m pytest sdist/tests -m "not perf"
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cibw-sdist

@@ -7,6 +7,8 @@ include CMakeLists.txt
 include external/CMakeLists.txt
 include external/apply_patches.cmake
 include external/patches/*.patch
+# Only in an sdist, where setup.py's sdist command put it.
+graft external/libsamplerate
 include uv.lock
 include examples/*.py
 graft tests
