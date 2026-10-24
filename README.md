@@ -13,8 +13,8 @@ This is the [LedFx](https://github.com/LedFx) team's maintained fork of
 [tuxu/python-samplerate](https://github.com/tuxu/python-samplerate). LedFx
 depends on it, and upstream releases rarely, so the fork provides:
 
-- Prebuilt wheels for CPython 3.11–3.15 on Linux (x86_64, aarch64), macOS
-  (Intel, Apple Silicon) and Windows (x64).
+- Prebuilt wheels for CPython 3.11–3.15 on Linux (x86_64, aarch64, and armv7l
+  for 32-bit Raspberry Pi OS), macOS (Intel, Apple Silicon) and Windows (x64).
 - Optional GIL release during resampling, for multi-threaded use.
 - Fixes for crashes and memory errors in the bindings and in libsamplerate
   itself (see [CHANGELOG.md](https://github.com/LedFx/samplerate-ledfx/blob/main/CHANGELOG.md)).
@@ -31,8 +31,16 @@ The module is imported as `samplerate`, the same name as upstream's
 [`samplerate`](https://pypi.org/project/samplerate/) package, so install one or
 the other: `pip uninstall samplerate` first if you are switching.
 
-Building from source (where no wheel fits) needs a C++14 compiler and network
-access: CMake fetches libsamplerate and pybind11 at build time.
+On 32-bit Raspberry Pi OS the armv7l wheels need a Pi 2 or newer, and NumPy
+has no armv7l wheels on PyPI: let piwheels (Raspberry Pi OS's default extra
+index) supply it, or use apt's `python3-numpy` in a venv made with
+`--system-site-packages`. The ARMv6 Pi Zero and Pi 1 get their wheels from
+piwheels, which builds them from the sdist.
+
+Building from source (where no wheel fits) needs a C++14 compiler and git.
+The sdist includes libsamplerate's sources and pip installs pybind11 and CMake
+as build requirements, so the build needs no other network access. A git
+checkout clones libsamplerate at build time.
 
 ## Usage
 

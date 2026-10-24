@@ -1,15 +1,22 @@
 # Maintaining samplerate-ledfx
 
 This is a fork of [tuxu/python-samplerate](https://github.com/tuxu/python-samplerate)
-with LedFx's GIL handling, build info and CI on top. It wraps two vendored C/C++
-projects, pinned by commit in [`external/CMakeLists.txt`](external/CMakeLists.txt).
+with LedFx's GIL handling, build info and CI on top. It wraps libsamplerate,
+pinned by commit in [`external/CMakeLists.txt`](external/CMakeLists.txt), with
+pybind11, pinned in `[build-system] requires` in `pyproject.toml`.
+
+A git checkout clones libsamplerate at configure time. The sdist instead ships
+that commit's sources in `external/libsamplerate/` (setup.py's `sdist` command
+downloads them), so building from the sdist needs no network beyond the
+package index. piwheels, which builds the Raspberry Pi OS wheels, depends on
+that, and CI's sdist job builds the sdist with networking disabled to keep it so.
 
 ## What keeps it current
 
 | What | How | Who acts |
 | --- | --- | --- |
 | GitHub Actions, uv.lock, Python deps, prek hooks | Renovate, from the org preset `github>LedFx/renovate-config`. Non-majors automerge on green CI after 14 days; majors wait 30 days and need a person. | Renovate; majors reviewed by a maintainer |
-| pybind11 | Renovate regex manager on `external/CMakeLists.txt` (release tags). Never automerged: it changes the compiled wheel. | Maintainer reviews |
+| pybind11 | Renovate bumps the `pybind11==` build requirement in `pyproject.toml`. Never automerged: it changes the compiled wheel. | Maintainer reviews |
 | libsamplerate | Tracks `master` by commit (see below); Renovate bumps the commit. Never automerged. | Maintainer reviews |
 | Upstream fork | Renovate bumps the marker below when `tuxu/python-samplerate` moves. The PR is the prompt to review upstream. | Maintainer reviews |
 | New NumPy / Python releases | Weekly scheduled CI builds and tests every wheel against the newest NumPy, plus NumPy nightly on the newest CPython. | Whoever sees the red run |

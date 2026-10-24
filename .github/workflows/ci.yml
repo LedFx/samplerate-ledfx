@@ -164,6 +164,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        if: matrix.arch == 'armv7l'
+        with:
+          platforms: arm
+
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
@@ -214,11 +219,63 @@ jobs:
           tar -xzf dist/*.tar.gz -C sdist --strip-components=1
           uv run --no-project pytest sdist/tests -m "not perf"
 
+      # piwheels builds the Raspberry Pi OS wheels from the sdist with no
+      # network beyond the package index. Build it here with none at all,
+      # from preinstalled build requirements, so nothing fetches at build time.
+      - name: Build and test the sdist with networking disabled
+        run: |
+          python3 -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['build-system']['requires']))" > build-requires.txt
+          uv venv offline
+          uv pip install -p offline -r build-requires.txt numpy --group test
+          # Ubuntu's AppArmor blocks unprivileged user namespaces by default.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          unshare -rn uv pip install -p offline --offline --no-cache --no-build-isolation --no-deps dist/*.tar.gz
+          offline/bin/python -m pytest sdist/tests -m "not perf"
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
           if-no-files-found: error
+
+  # cibuildwheel skips testing armv7l (test-skip in pyproject.toml). Install
+  # the wheels on Debian armhf, the base of 32-bit Raspberry Pi OS, under QEMU,
+  # with the system Python and apt's NumPy, as a Pi user would.
+  test_armv7l:
+    name: Test armv7l wheel on Debian ${{ matrix.debian }}
+    needs: [plan, build_wheels]
+    if: needs.plan.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Raspberry Pi OS 12 (Python 3.11, NumPy 1.24) and 13 (Python 3.13)
+        debian: [bookworm, trixie]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cibw-wheels-ubuntu-latest-armv7l
+          path: wheelhouse
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm
+      - name: Install and test the wheel
+        env:
+          DEBIAN: ${{ matrix.debian }}
+        run: |
+          docker run --rm --platform linux/arm/v7 -v "$PWD:/src:ro" -w /src "debian:$DEBIAN" sh -euxc '
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends python3-venv python3-numpy python3-pytest
+            python3 -m venv --system-site-packages /venv
+            /venv/bin/pip install --no-index --find-links wheelhouse samplerate-ledfx
+            /venv/bin/python -m pytest -p no:cacheprovider tests -m "not perf"
+          '
 
   # Tests-only and lock-only changes cannot change the compiled wheels: build
   # once from source on the oldest and newest Python instead of every wheel.
@@ -323,7 +380,7 @@ jobs:
   ci-passed:
     name: CI passed
     if: always()
-    needs: [plan, lint, build_wheels, build_sdist, test_linux, numpy_oldest]
+    needs: [plan, lint, build_wheels, build_sdist, test_armv7l, test_linux, numpy_oldest]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
