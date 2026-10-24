@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/LedFx/samplerate-ledfx/compare/v0.4.0...v0.5.0) (2026-10-24)
+
+
+### Features
+
+* **build:** armv7l wheels and an offline sdist build for Raspberry Pi OS ([#41](https://github.com/LedFx/samplerate-ledfx/issues/41)) ([3229cb7](https://github.com/LedFx/samplerate-ledfx/commit/3229cb727c128ab818b30f9344f109ad6f445ee0))
+
+
+### Bug Fixes
+
+* isolate PyPI upload sidecars from verified distributions ([#33](https://github.com/LedFx/samplerate-ledfx/issues/33)) ([a27c457](https://github.com/LedFx/samplerate-ledfx/commit/a27c45719947b6c41d1cc28f1e1901b40487c3f3))
+
 ## [0.4.0](https://github.com/LedFx/python-samplerate-ledfx/compare/v0.3.0...v0.4.0) (2026-10-03)
 
 
