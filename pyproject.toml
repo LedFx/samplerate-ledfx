@@ -42,7 +42,7 @@ Issues = "https://github.com/LedFx/samplerate-ledfx/issues"
 Upstream = "https://github.com/tuxu/python-samplerate"
 
 [dependency-groups]
-wheel-build = ["cibuildwheel[uv]==4.2.1"]
+wheel-build = ["cibuildwheel[uv]==4.3.1"]
 dev = [
     "setuptools>=80",
     # Lint tools, run by prek (.pre-commit-config.yaml) from this lock.
